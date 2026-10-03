@@ -6,6 +6,7 @@ dotenv.config();
 
 let pool = null;
 let useFallback = false;
+let useFallback_error = null;
 let initComplete = false;
 let initPromise = null;
 
@@ -94,7 +95,7 @@ async function initMySQL() {
       }
 
       // 2. Main Pool Connection
-      // Use SSL for cloud databases (Aiven, Railway, PlanetScale, etc.)
+      // Aiven requires SSL with specific settings
       pool = mysql.createPool({
         host: dbHost,
         port: Number(process.env.DB_PORT) || 3306,
@@ -102,11 +103,20 @@ async function initMySQL() {
         password: process.env.DB_PASSWORD || '',
         database: dbName,
         waitForConnections: true,
-        connectionLimit: 5,
+        connectionLimit: 3,
         queueLimit: 0,
-        connectTimeout: 10000,
-        ssl: useSSL ? { rejectUnauthorized: false } : undefined
+        connectTimeout: 15000,
+        ssl: useSSL ? {
+          rejectUnauthorized: false,
+          minVersion: 'TLSv1.2'
+        } : undefined
       });
+
+      // Test the connection immediately with a ping
+      const testConn = await pool.getConnection();
+      await testConn.ping();
+      testConn.release();
+      console.log('✅ [MySQL Ping OK] Connection to cloud DB verified!');
 
     // Check if products table exists and has category_id column
     try {
@@ -321,9 +331,13 @@ async function initMySQL() {
     console.log(`✅ [MySQL Connected] Database "${dbName}" is active and ready.`);
     return true;
   } catch (error) {
-    console.warn('⚠️ [MySQL Connection Notice]:', error.message);
+    const errMsg = error.message || 'Unknown error';
+    const errCode = error.code || 'UNKNOWN';
+    console.error(`❌ [MySQL Connection FAILED] Code: ${errCode} | Message: ${errMsg}`);
+    console.error(`❌ [DB Config] Host: ${process.env.DB_HOST} | Port: ${process.env.DB_PORT} | User: ${process.env.DB_USER} | DB: ${process.env.DB_NAME}`);
     console.log('ℹ️ Activating resilient In-Memory Store so the project runs immediately with complete functionality.');
     useFallback = true;
+    useFallback_error = errMsg;
     await initMemoryStore();
     initComplete = true;
     return false;
@@ -737,6 +751,7 @@ function getDatabaseStatus() {
   return {
     isMySQL: isOnlineDb,
     mode: isOnlineDb ? 'Live MySQL Database' : 'In-Memory Fallback Store (Full Catalog & Data Active)',
+    error: useFallback_error || null,
     database: process.env.DB_NAME || 'ecommerce_db',
     host: process.env.DB_HOST || 'localhost',
     activeProducts: isOnlineDb ? 'Synced with MySQL' : memoryStore.products.length
