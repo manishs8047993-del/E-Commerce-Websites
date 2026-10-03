@@ -4,6 +4,7 @@ async function getSeedData() {
   const hashedPasswordAdmin = await bcrypt.hash('admin123', 10);
   const hashedPasswordCustomer = await bcrypt.hash('customer123', 10);
   const hashedPasswordDelivery = await bcrypt.hash('deliverypass123', 10);
+  const hashedPasswordKundan = await bcrypt.hash('Kundan@123', 10);
 
   const users = [
     {
@@ -61,6 +62,20 @@ async function getSeedData() {
       state: 'CA',
       postal_code: '95113',
       created_at: new Date('2026-03-10T11:00:00Z')
+    },
+    {
+      id: 5,
+      name: 'kundan',
+      email: 'kundan123@gmail.com',
+      password: hashedPasswordKundan,
+      role: 'customer',
+      avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80',
+      phone: '+1 555-0144',
+      address: '42 Main Avenue',
+      city: 'San Jose',
+      state: 'CA',
+      postal_code: '95113',
+      created_at: new Date('2026-03-01T10:00:00Z')
     }
   ];
 

@@ -489,17 +489,19 @@ function handleMemoryQuery(sql, params) {
 
   // 2. INSERT queries
   if (cleanSql.startsWith('insert into users')) {
+    const hasAvatar = cleanSql.includes('avatar_url');
     const newUser = {
       id: memoryStore.nextIds.users++,
       name: params[0],
       email: params[1],
       password: params[2],
       role: params[3] || 'customer',
-      phone: params[4] || null,
-      address: params[5] || null,
-      city: params[6] || null,
-      state: params[7] || null,
-      postal_code: params[8] || null,
+      avatar_url: hasAvatar ? params[4] : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80',
+      phone: hasAvatar ? (params[5] || null) : (params[4] || null),
+      address: hasAvatar ? (params[6] || null) : (params[5] || null),
+      city: hasAvatar ? (params[7] || null) : (params[6] || null),
+      state: hasAvatar ? (params[8] || null) : (params[7] || null),
+      postal_code: hasAvatar ? (params[9] || null) : (params[8] || null),
       created_at: new Date()
     };
     memoryStore.users.push(newUser);
