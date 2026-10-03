@@ -6,6 +6,8 @@ dotenv.config();
 
 let pool = null;
 let useFallback = false;
+let initComplete = false;
+let initPromise = null;
 
 // In-memory fallback store in case MySQL is not actively running locally
 const memoryStore = {
@@ -52,30 +54,53 @@ async function initMemoryStore() {
 
 // Initialize MySQL database tables and seed data
 async function initMySQL() {
-  try {
-    // 1. Initial connection to create database if not exists
-    const tempConnection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || ''
-    });
+  if (initComplete) {
+    return !useFallback;
+  }
+  if (initPromise) {
+    return initPromise;
+  }
 
-    const dbName = process.env.DB_NAME || 'ecommerce_db';
-    await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-    await tempConnection.end();
+  initPromise = (async () => {
+    const isVercel = Boolean(process.env.VERCEL || process.env.NOW_REGION);
+    const dbHost = process.env.DB_HOST || 'localhost';
+    const isLocalhost = dbHost === 'localhost' || dbHost === '127.0.0.1';
 
-    // 2. Main Pool Connection
-    pool = mysql.createPool({
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: dbName,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
-    });
+    // If running on Vercel serverless without an external cloud MySQL host configured
+    if (isVercel && isLocalhost) {
+      console.log('⚡ [Vercel Cloud] Localhost MySQL is not available in serverless containers. Activating In-Memory Store with full catalog.');
+      useFallback = true;
+      await initMemoryStore();
+      initComplete = true;
+      return false;
+    }
+
+    try {
+      // 1. Initial connection to create database if not exists
+      const tempConnection = await mysql.createConnection({
+        host: dbHost,
+        port: process.env.DB_PORT || 3306,
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '',
+        connectTimeout: 4000
+      });
+
+      const dbName = process.env.DB_NAME || 'ecommerce_db';
+      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+      await tempConnection.end();
+
+      // 2. Main Pool Connection
+      pool = mysql.createPool({
+        host: dbHost,
+        port: process.env.DB_PORT || 3306,
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '',
+        database: dbName,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        connectTimeout: 4000
+      });
 
     // Check if products table exists and has category_id column
     try {
@@ -286,6 +311,7 @@ async function initMySQL() {
     }
 
     useFallback = false;
+    initComplete = true;
     console.log(`✅ [MySQL Connected] Database "${dbName}" is active and ready.`);
     return true;
   } catch (error) {
@@ -293,12 +319,20 @@ async function initMySQL() {
     console.log('ℹ️ Activating resilient In-Memory Store so the project runs immediately with complete functionality.');
     useFallback = true;
     await initMemoryStore();
+    initComplete = true;
     return false;
   }
+  })();
+
+  return initPromise;
 }
 
 // Generic Query function handling both MySQL and Fallback memory store seamlessly
 async function query(sql, params = []) {
+  if (!initComplete) {
+    await initMySQL();
+  }
+
   if (!useFallback && pool) {
     try {
       const [rows] = await pool.query(sql, params);
@@ -684,11 +718,13 @@ function handleMemoryQuery(sql, params) {
 }
 
 function getDatabaseStatus() {
+  const isOnlineDb = !useFallback && Boolean(pool);
   return {
-    isMySQL: !useFallback,
-    mode: useFallback ? 'In-Memory Fallback Store (No MySQL server required)' : 'Live MySQL Database',
+    isMySQL: isOnlineDb,
+    mode: isOnlineDb ? 'Live MySQL Database' : 'In-Memory Fallback Store (Full Catalog & Data Active)',
     database: process.env.DB_NAME || 'ecommerce_db',
-    host: process.env.DB_HOST || 'localhost'
+    host: process.env.DB_HOST || 'localhost',
+    activeProducts: isOnlineDb ? 'Synced with MySQL' : memoryStore.products.length
   };
 }
 
