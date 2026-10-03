@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile & Settings — NovaStore</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .profile-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 2rem;
+      margin: 2.5rem auto 4rem auto;
+    }
+    @media (max-width: 860px) {
+      .profile-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .profile-sidebar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 90px;
+    }
+    .profile-avatar-wrapper {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 1.25rem auto;
+      cursor: pointer;
+    }
+    .profile-avatar-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #ffffff;
+      box-shadow: 0 0 0 3px var(--primary), var(--shadow-md);
+      transition: opacity 0.2s;
+    }
+    .avatar-upload-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .profile-avatar-wrapper:hover .avatar-upload-overlay {
+      opacity: 1;
+    }
+    .profile-avatar-wrapper:hover .profile-avatar-img {
+      opacity: 0.7;
+    }
+    .avatar-upload-overlay i {
+      font-size: 1.5rem;
+    }
+    .device-upload-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-lg);
+      border: 2px dashed var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-top: 0.85rem;
+    }
+    .device-upload-btn:hover {
+      background: var(--primary);
+      color: #fff;
+      border-style: solid;
+    }
+    .upload-progress-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--primary-light);
+      margin-top: 0.5rem;
+      overflow: hidden;
+      display: none;
+    }
+    .upload-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #6366f1);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 2px;
+    }
+    .profile-role-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+    }
+    .role-pill-customer {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    .role-pill-admin {
+      background: #f5f3ff;
+      color: #6366f1;
+      border: 1px solid #c7d2fe;
+    }
+    .preset-avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+    .preset-avatar-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      padding: 0;
+      background: none;
+      transition: var(--transition);
+    }
+    .preset-avatar-btn:hover, .preset-avatar-btn.active {
+      border-color: var(--primary);
+      transform: scale(1.1);
+      box-shadow: 0 0 0 2px var(--primary-light);
+    }
+    .preset-avatar-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .profile-main-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-md);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="navbar-root"></div>
+
+  <main class="container">
+    <div class="profile-layout">
+      
+      <!-- Left Sidebar User Badge -->
+      <!-- Hidden real file input -->
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleDevicePhotoUpload(event)">
+
+      <aside class="profile-sidebar-card">
+        <!-- Clickable avatar with camera overlay -->
+        <div class="profile-avatar-wrapper" onclick="document.getElementById('avatarFileInput').click()" title="Click to upload your photo from device">
+          <img id="sidebarAvatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80" alt="Avatar" class="profile-avatar-img">
+          <div class="avatar-upload-overlay">
+            <i class="fas fa-camera"></i>
+            <span>Change Photo</span>
+          </div>
+        </div>
+
+        <h2 id="sidebarName" style="font-size: 1.35rem; margin-bottom: 0.2rem;">Loading...</h2>
+        <div id="sidebarEmail" style="color: var(--text-muted); font-size: 0.85rem; word-break: break-all;">user@example.com</div>
+        <div id="sidebarRoleBadge" class="profile-role-pill role-pill-customer">
+          <i class="fas fa-user"></i> Customer Account
+        </div>
+
+        <!-- Upload from Device Button -->
+        <button type="button" class="device-upload-btn" id="uploadDeviceBtn" onclick="document.getElementById('avatarFileInput').click()">
+          <i class="fas fa-folder-open"></i> Upload Photo from Device
+        </button>
+        <div class="upload-progress-bar" id="uploadProgressBar">
+          <div class="upload-progress-fill" id="uploadProgressFill"></div>
+        </div>
+        <div id="uploadStatusMsg" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; min-height: 1rem;"></div>
+
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem; text-align: left;">
+            <i class="fas fa-magic" style="color: var(--primary);"></i> Quick Preset Avatars
+          </div>
+          <div class="preset-avatar-grid">
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80')" title="Gentleman">
+              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar 1">
+            </button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80')" title="Lady Modern">
+              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" alt="Avatar 2">
+            </button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=300&auto=format&fit=crop&q=80')" title="Executive">
+              <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80" alt="Avatar 3">
+            </button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80')" title="Administrator">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar 4">
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;" id="quickActionLinks">
+          <!-- Dynamic Links Injected via JS -->
+        </div>
+      </aside>
+
+      <!-- Right Main Profile Form -->
+      <section class="profile-main-card">
+        <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+          <h1 style="font-size: 1.85rem; font-weight: 800;">Profile & Account Settings</h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">Update your profile avatar photo, delivery address, and contact information.</p>
+        </div>
+
+        <form id="profileForm" onsubmit="handleProfileUpdate(event)">
+          
+          <!-- Hidden avatar URL (set programmatically by upload/preset, not shown to user) -->
+          <input type="hidden" id="profileAvatarInput">
+
+          <!-- Basic Info -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input type="text" id="profileName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address (Read-Only)</label>
+              <input type="email" id="profileEmail" class="form-control" disabled style="opacity: 0.75; cursor: not-allowed; background: var(--bg-subtle);">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" id="profilePhone" class="form-control" placeholder="+1 555-0199">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Street Delivery Address</label>
+            <input type="text" id="profileAddress" class="form-control" placeholder="123 Tech Street, Apt 4B">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input type="text" id="profileCity" class="form-control" placeholder="San Jose">
+            </div>
+            <div class="form-group">
+              <label class="form-label">State / Province</label>
+              <input type="text" id="profileState" class="form-control" placeholder="CA">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Zip / Postal Code</label>
+              <input type="text" id="profilePostalCode" class="form-control" placeholder="95113">
+            </div>
+          </div>
+
+          <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center;">
+            <button type="submit" id="saveProfileBtn" class="btn btn-primary btn-lg">
+              <i class="fas fa-save"></i> Save Profile & Photo Changes
+            </button>
+            <a href="/index.html" class="btn btn-secondary btn-lg">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </section>
+
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/toast.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Orders & Shipments — NovaStore</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="navbar-root"></div>
+
+  <main class="container" style="max-width: 1080px;">
+    <!-- Page Header & Live Status -->
+    <div style="margin: 2.5rem 0 1.5rem 0; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.25rem;">
+      <div>
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #e0f2fe; color: #0369a1; padding: 0.3rem 0.75rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 800; margin-bottom: 0.5rem;">
+          <span class="live-dot"></span> LIVE ORDER TRACKING & UPDATES
+        </div>
+        <h1 style="font-size: 2.2rem; font-weight: 800;">My Order History & Live Tracking</h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Track real-time shipment stages, assigned courier agents, and invoices.</p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <button onclick="loadMyOrders(true)" class="btn btn-secondary btn-sm" id="refreshOrdersBtn" title="Sync live updates">
+          <i class="fas fa-sync-alt" id="syncIcon"></i> Live Sync
+        </button>
+        <a href="/index.html" class="btn btn-primary btn-sm">
+          <i class="fas fa-shopping-bag"></i> Browse Store
+        </a>
+      </div>
+    </div>
+
+
+
+    <!-- Search & Filter Bar -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.75rem 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="position: relative; flex: 1; min-width: 260px;">
+        <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 0.9rem;"></i>
+        <input type="text" id="orderSearchInput" oninput="filterOrdersList()" placeholder="Filter by Order # (e.g. ORD-2026), Product name, or Status..." class="form-control" style="padding-left: 2.5rem; font-size: 0.88rem;">
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;" id="filterTabs">
+        <button onclick="setStatusFilter('all', this)" class="btn btn-secondary btn-sm active-tab" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">All Orders</button>
+        <button onclick="setStatusFilter('active', this)" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">In Progress</button>
+        <button onclick="setStatusFilter('Delivered', this)" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Delivered</button>
+      </div>
+    </div>
+
+    <!-- Orders Feed Root -->
+    <div id="orders-root">
+      <div style="text-align: center; padding: 5rem 0;">
+        <i class="fas fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--primary);"></i>
+        <p style="margin-top: 1rem; color: var(--text-muted);">Loading real-time order history...</p>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/toast.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/orders.js"></script>
+</body>
+</html>

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard & Management — NovaStore</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      --admin-sidebar-w: 260px;
+    }
+    body {
+      background-color: #f1f5f9;
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .admin-layout {
+      display: flex;
+      width: 100vw;
+      min-height: 100vh;
+    }
+    /* Sidebar */
+    .admin-sidebar {
+      width: var(--admin-sidebar-w);
+      background: #0f172a;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      transition: var(--transition);
+      box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+    }
+    .admin-brand {
+      padding: 1.5rem 1.25rem;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .admin-brand i {
+      color: #6366f1;
+      font-size: 1.5rem;
+    }
+    .admin-nav {
+      padding: 1.25rem 0.75rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      overflow-y: auto;
+    }
+    .admin-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.75rem 1rem;
+      color: #94a3b8;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: var(--transition);
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .admin-nav-item:hover {
+      color: #ffffff;
+      background: rgba(255,255,255,0.06);
+    }
+    .admin-nav-item.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .admin-nav-item i {
+      font-size: 1.05rem;
+      width: 20px;
+      text-align: center;
+    }
+    .admin-user-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #090e1a;
+    }
+    /* Main Content Area */
+    .admin-main {
+      margin-left: var(--admin-sidebar-w);
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .admin-topbar {
+      height: 70px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+    .admin-content-body {
+      padding: 2rem;
+      flex: 1;
+    }
+    /* Stat Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: var(--transition);
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .stat-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .stat-val {
+      font-size: 1.85rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+    .stat-lbl {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    /* Tab Panes */
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Table Enhancements */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    .admin-table th {
+      background: #f8fafc;
+      padding: 1rem 1.25rem;
+      font-weight: 700;
+      color: #475569;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    .admin-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      color: #1e293b;
+      vertical-align: middle;
+    }
+    .admin-table tr:hover td {
+      background: #f8fafc;
+    }
+    /* Status Badge */
+    .badge-status {
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .badge-Placed { background: #dbeafe; color: #1e40af; }
+    .badge-Processing { background: #fef3c7; color: #92400e; }
+    .badge-Shipped { background: #e0e7ff; color: #4338ca; }
+    .badge-Delivered { background: #d1fae5; color: #065f46; }
+    .badge-Cancelled { background: #fee2e2; color: #991b1b; }
+
+    /* Modal */
+    .admin-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .admin-modal.open {
+      display: flex;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: var(--radius-xl);
+      max-width: 650px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--border);
+    }
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .admin-sidebar {
+        transform: translateX(-100%);
+      }
+      .admin-sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      .admin-main {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <a href="/index.html" class="admin-brand">
+        <i class="fas fa-shopping-bag"></i>
+        <span>Nova<b>Store</b> <small style="font-size: 0.65rem; background: #3730a3; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">ADMIN</small></span>
+      </a>
+
+      <nav class="admin-nav" id="sidebarNav">
+        <button class="admin-nav-item active" id="navBtnDashboard" onclick="switchAdminTab('dashboard', this)">
+          <i class="fas fa-chart-line"></i> Dashboard
+        </button>
+        <button class="admin-nav-item" id="navBtnAddProduct" onclick="switchAdminTab('add-product', this)">
+          <i class="fas fa-plus-circle"></i> Add Product
+        </button>
+        <button class="admin-nav-item" id="navBtnProducts" onclick="switchAdminTab('products', this)">
+          <i class="fas fa-boxes"></i> Manage Products
+        </button>
+        <button class="admin-nav-item" id="navBtnCategories" onclick="switchAdminTab('categories', this)">
+          <i class="fas fa-tags"></i> Manage Categories
+        </button>
+        <button class="admin-nav-item" id="navBtnOrders" onclick="switchAdminTab('orders', this)">
+          <i class="fas fa-shopping-cart"></i> View Orders
+        </button>
+        <button class="admin-nav-item" id="navBtnCustomers" onclick="switchAdminTab('customers', this)">
+          <i class="fas fa-users"></i> Manage Users
+        </button>
+        <button class="admin-nav-item" id="navBtnStaff" onclick="switchAdminTab('staff', this)">
+          <i class="fas fa-id-badge"></i> Staff Management
+        </button>
+        <button class="admin-nav-item" id="navBtnPayments" onclick="switchAdminTab('payments', this)">
+          <i class="fas fa-credit-card"></i> View Payments
+        </button>
+        <button class="admin-nav-item" id="navBtnReports" onclick="switchAdminTab('reports', this)">
+          <i class="fas fa-file-invoice-dollar"></i> Generate Reports
+        </button>
+
+        <div style="height: 1px; background: #1e293b; margin: 0.5rem 0;"></div>
+        <a href="/index.html" class="admin-nav-item" target="_blank">
+          <i class="fas fa-external-link-alt"></i> View Storefront
+        </a>
+      </nav>
+
+      <div class="admin-user-footer">
+        <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: #4f46e5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;" id="adminAvatarInitial">A</div>
+          <div style="overflow: hidden;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: #ffffff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;" id="adminUserName">Admin</div>
+            <div style="font-size: 0.7rem; color: #94a3b8;">Administrator</div>
+          </div>
+        </div>
+        <button onclick="handleAdminLogout()" title="Logout" style="background: none; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; padding: 0.4rem;">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Section -->
+    <main class="admin-main">
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <button class="btn btn-secondary btn-sm" id="sidebarToggleBtn" onclick="toggleAdminSidebar()" style="display: none;">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;" id="topbarTitle">Dashboard Overview</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Full-stack control center for store inventory, orders, payments, and users</p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <a href="/index.html" class="btn btn-secondary btn-sm">
+            <i class="fas fa-store"></i> Customer View
+          </a>
+          <button onclick="handleAdminLogout()" class="btn btn-danger btn-sm" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Body -->
+      <div class="admin-content-body">
+
+        <!-- ======================================================== -->
+        <!-- TAB 1: DASHBOARD OVERVIEW -->
+        <!-- ======================================================== -->
+        <section id="tab-dashboard" class="tab-pane active">
+          <!-- Metric Stat Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Total Revenue</div>
+                <div class="stat-val" id="statRevenue">$0.00</div>
+              </div>
+              <div class="stat-icon" style="background: #d1fae5; color: #059669;">
+                <i class="fas fa-dollar-sign"></i>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Total Orders</div>
+                <div class="stat-val" id="statOrders">0</div>
+              </div>
+              <div class="stat-icon" style="background: #dbeafe; color: #2563eb;">
+                <i class="fas fa-shopping-bag"></i>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Total Products</div>
+                <div class="stat-val" id="statProducts">0</div>
+              </div>
+              <div class="stat-icon" style="background: #fef3c7; color: #d97706;">
+                <i class="fas fa-boxes"></i>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Registered Customers</div>
+                <div class="stat-val" id="statCustomers">0</div>
+              </div>
+              <div class="stat-icon" style="background: #ede9fe; color: #7c3aed;">
+                <i class="fas fa-users"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <button onclick="switchAdminTab('add-product')" class="btn btn-primary">
+              <i class="fas fa-plus"></i> Add New Product
+            </button>
+            <button onclick="switchAdminTab('orders')" class="btn btn-secondary">
+              <i class="fas fa-list"></i> View All Orders
+            </button>
+            <button onclick="switchAdminTab('customers')" class="btn btn-secondary">
+              <i class="fas fa-user-friends"></i> Customer List
+            </button>
+            <button onclick="switchAdminTab('payments')" class="btn btn-secondary">
+              <i class="fas fa-receipt"></i> Payment Records
+            </button>
+            <button onclick="switchAdminTab('reports')" class="btn btn-secondary">
+              <i class="fas fa-chart-bar"></i> Sales Reports
+            </button>
+          </div>
+
+          <!-- Recent Orders Section -->
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">
+                <i class="fas fa-receipt" style="color: var(--primary);"></i> Recent Customer Orders
+              </h3>
+              <button onclick="switchAdminTab('orders')" class="btn btn-secondary btn-sm">View All</button>
+            </div>
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recentOrdersTbody">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading orders...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 2: ADD PRODUCT -->
+        <!-- ======================================================== -->
+        <section id="tab-add-product" class="tab-pane">
+          <div style="max-width: 800px; background: white; border-radius: var(--radius-xl); border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 2rem;">
+            <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem;">
+              <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;" id="productFormHeading">
+                <i class="fas fa-plus-circle" style="color: var(--primary);"></i> Add New Product to Store
+              </h3>
+              <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Fill in the product details to publish it instantly to the customer storefront catalog.</p>
+            </div>
+
+            <form id="addProductForm" onsubmit="handleProductSubmit(event)">
+              <input type="hidden" id="editProductId" value="">
+
+              <div class="form-group">
+                <label class="form-label">Product Name / Title *</label>
+                <input type="text" id="prodName" class="form-control" placeholder="e.g. Nike Air Max Running Shoes" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Category *</label>
+                  <select id="prodCategory" class="form-control" required>
+                    <option value="">Select Category...</option>
+                    <!-- Injected via JS -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Brand Name</label>
+                  <input type="text" id="prodBrand" class="form-control" placeholder="e.g. Nike, Apple, Sony">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Selling Price ($ USD) *</label>
+                  <input type="number" step="0.01" min="0" id="prodPrice" class="form-control" placeholder="129.99" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Original / MSRP Price ($ USD)</label>
+                  <input type="number" step="0.01" min="0" id="prodOriginalPrice" class="form-control" placeholder="159.99">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Inventory Stock Quantity *</label>
+                  <input type="number" min="0" id="prodStock" class="form-control" value="25" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Image URL *</label>
+                <input type="url" id="prodImageUrl" class="form-control" placeholder="https://images.unsplash.com/..." required oninput="previewProductImage(this.value)">
+                <div id="imagePreviewContainer" style="margin-top: 0.75rem; display: none;">
+                  <img id="imagePreviewImg" src="" alt="Preview" style="max-height: 140px; border-radius: var(--radius-md); border: 1px solid var(--border); object-fit: contain;">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Product Description</label>
+                <textarea id="prodDescription" class="form-control" rows="4" placeholder="Highlight key specifications, materials, warranty, and features..."></textarea>
+              </div>
+
+              <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;">
+                <input type="checkbox" id="prodFeatured" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="prodFeatured" style="font-weight: 600; cursor: pointer; margin: 0;">Feature this product on homepage banner</label>
+              </div>
+
+              <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" id="saveProductBtn" class="btn btn-primary btn-lg" style="flex: 1;">
+                  <i class="fas fa-save"></i> Save Product
+                </button>
+                <button type="button" onclick="resetProductForm()" class="btn btn-secondary btn-lg">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 3: VIEW & MANAGE PRODUCTS -->
+        <!-- ======================================================== -->
+        <section id="tab-products" class="tab-pane">
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+              <div>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0;">Store Products Inventory</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">View, edit pricing, or remove catalog items</p>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem;">
+                <input type="text" id="productSearchInput" oninput="filterProductsTable()" placeholder="Search products..." class="form-control" style="width: 240px; padding: 0.45rem 0.75rem;">
+                <button onclick="switchAdminTab('add-product')" class="btn btn-primary btn-sm">
+                  <i class="fas fa-plus"></i> Add Product
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="admin-table" id="productsTable">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Rating</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTbody">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading products...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 4: MANAGE CATEGORIES -->
+        <!-- ======================================================== -->
+        <section id="tab-categories" class="tab-pane">
+          <div style="display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; align-items: start;">
+            <!-- Add Category Form -->
+            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+              <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem;">
+                <i class="fas fa-folder-plus" style="color: var(--primary);"></i> Add New Category
+              </h3>
+              <form id="addCategoryForm" onsubmit="handleAddCategory(event)">
+                <div class="form-group">
+                  <label class="form-label">Category Name *</label>
+                  <input type="text" id="catName" class="form-control" placeholder="e.g. Footwear & Shoes" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">FontAwesome Icon Class</label>
+                  <input type="text" id="catIcon" class="form-control" placeholder="fas fa-shoe-prints" value="fas fa-box">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea id="catDescription" class="form-control" rows="3" placeholder="Category brief overview..."></textarea>
+                </div>
+                <button type="submit" id="addCatBtn" class="btn btn-primary btn-block">
+                  <i class="fas fa-plus"></i> Create Category
+                </button>
+              </form>
+            </div>
+
+            <!-- Categories Table -->
+            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+              <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem;">
+                <i class="fas fa-tags" style="color: var(--secondary);"></i> Existing Categories
+              </h3>
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Icon</th>
+                      <th>Category Name</th>
+                      <th>Slug</th>
+                      <th>Total Products</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="categoriesTbody">
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading categories...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 5: VIEW ORDERS -->
+        <!-- ======================================================== -->
+        <section id="tab-orders" class="tab-pane">
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+              <div>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0;">Customer Orders Management</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Track orders and update real-time dispatch fulfillment statuses</p>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <select id="orderStatusFilter" onchange="loadAdminOrders()" class="form-control" style="width: 170px; padding: 0.45rem 0.75rem;">
+                  <option value="all">All Statuses</option>
+                  <option value="Placed">Placed</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+
+                <input type="text" id="orderSearchInput" oninput="loadAdminOrders()" placeholder="Search by Order # or Recipient..." class="form-control" style="width: 250px; padding: 0.45rem 0.75rem;">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order Number</th>
+                    <th>Customer / Recipient</th>
+                    <th>Delivery City</th>
+                    <th>Total ($)</th>
+                    <th>Payment</th>
+                    <th>Fulfillment Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTbody">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading orders...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 6: VIEW CUSTOMERS / USERS -->
+        <!-- ======================================================== -->
+        <section id="tab-customers" class="tab-pane">
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+              <div>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0;">Registered Customers Directory</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">View customer accounts, registration dates, contact details, and purchasing history</p>
+              </div>
+
+              <input type="text" id="customerSearchInput" oninput="filterCustomersTable()" placeholder="Search customers..." class="form-control" style="width: 240px; padding: 0.45rem 0.75rem;">
+            </div>
+
+            <div class="table-responsive">
+              <table class="admin-table" id="customersTable">
+                <thead>
+                  <tr>
+                    <th>Customer Name</th>
+                    <th>Email Address</th>
+                    <th>Phone</th>
+                    <th>Location</th>
+                    <th>Total Orders</th>
+                    <th>Total Spent</th>
+                    <th>Joined</th>
+                  </tr>
+                </thead>
+                <tbody id="customersTbody">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading customers...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 7: VIEW PAYMENTS -->
+        <!-- ======================================================== -->
+        <section id="tab-payments" class="tab-pane">
+          <div class="stats-grid" id="paymentsStatsGrid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Settled / Collected</div>
+                <div class="stat-val" id="paymentSettledVal" style="color: #059669;">$0.00</div>
+              </div>
+              <div class="stat-icon" style="background: #d1fae5; color: #059669;"><i class="fas fa-check-double"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Pending COD Amount</div>
+                <div class="stat-val" id="paymentPendingVal" style="color: #d97706;">$0.00</div>
+              </div>
+              <div class="stat-icon" style="background: #fef3c7; color: #d97706;"><i class="fas fa-hand-holding-usd"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Total Transactions</div>
+                <div class="stat-val" id="paymentTransCount">0</div>
+              </div>
+              <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;"><i class="fas fa-exchange-alt"></i></div>
+            </div>
+          </div>
+
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem;">
+              <i class="fas fa-credit-card" style="color: var(--primary);"></i> Payment Transactions History
+            </h3>
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Method</th>
+                    <th>Payment Status</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTbody">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading payments...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 8: GENERATE REPORTS -->
+        <!-- ======================================================== -->
+        <section id="tab-reports" class="tab-pane">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0;">Store Sales & Analytics Report</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Comprehensive breakdown of sales performance, revenue, and product volume</p>
+            </div>
+            <button onclick="window.print()" class="btn btn-primary">
+              <i class="fas fa-print"></i> Export / Print Report
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <!-- Category Performance -->
+            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+              <h4 style="font-weight: 800; margin-bottom: 1rem; color: #0f172a;">
+                <i class="fas fa-chart-pie" style="color: var(--primary);"></i> Revenue by Category
+              </h4>
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Units Sold</th>
+                      <th>Total Sales</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportCategoryTbody">
+                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading reports...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Top Performing Products -->
+            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem;">
+              <h4 style="font-weight: 800; margin-bottom: 1rem; color: #0f172a;">
+                <i class="fas fa-trophy" style="color: #f59e0b;"></i> Top Performing Products
+              </h4>
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Qty Sold</th>
+                      <th>Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportProductsTbody">
+                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading reports...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- TAB 9: STAFF MANAGEMENT (ADMIN ONLY) -->
+        <!-- ======================================================== -->
+        <section id="tab-staff" class="tab-pane">
+          <!-- Staff Stat Cards -->
+          <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Total Staff</div>
+                <div class="stat-val" id="statTotalStaff">0</div>
+              </div>
+              <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;"><i class="fas fa-user-shield"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">System Admins</div>
+                <div class="stat-val" id="statTotalAdmins" style="color: #4f46e5;">0</div>
+              </div>
+              <div class="stat-icon" style="background: #ede9fe; color: #7c3aed;"><i class="fas fa-crown"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div>
+                <div class="stat-lbl">Delivery Agents</div>
+                <div class="stat-val" id="statTotalAgents" style="color: #059669;">0</div>
+              </div>
+              <div class="stat-icon" style="background: #d1fae5; color: #059669;"><i class="fas fa-shipping-fast"></i></div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 360px 1fr; gap: 1.5rem; align-items: start;">
+            <!-- Add Staff Form -->
+            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem; box-shadow: var(--shadow-sm);">
+              <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem;" id="staffFormTitle">
+                <i class="fas fa-user-plus" style="color: var(--primary);"></i> Add New Staff Member
+              </h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">Provision role-based team accounts for administrators & delivery agents.</p>
+
+              <form id="addStaffForm" onsubmit="handleStaffSubmit(event)">
+                <input type="hidden" id="editStaffId" value="">
+
+                <div class="form-group">
+                  <label class="form-label">Full Name *</label>
+                  <input type="text" id="staffName" class="form-control" placeholder="e.g. Alex Henderson" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Email Address *</label>
+                  <input type="email" id="staffEmail" class="form-control" placeholder="staff@ecommerce.com" required>
+                </div>
+
+                <div class="form-group" id="staffPasswordGroup">
+                  <label class="form-label">Password *</label>
+                  <input type="password" id="staffPassword" class="form-control" placeholder="Min 6 characters" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Assign Role *</label>
+                  <select id="staffRole" class="form-control" required style="font-weight: 700;">
+                    <option value="delivery_agent">🚚 Delivery Agent (Order Logistics & Dispatch)</option>
+                    <option value="admin">👑 Administrator (Full Store & Staff Access)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Contact Phone</label>
+                  <input type="tel" id="staffPhone" class="form-control" placeholder="+1 555-0144">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">City / Region</label>
+                  <input type="text" id="staffCity" class="form-control" placeholder="San Jose">
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                  <button type="submit" id="saveStaffBtn" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-save"></i> Save Staff
+                  </button>
+                  <button type="button" onclick="resetStaffForm()" class="btn btn-secondary">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Staff Directory Table -->
+            <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem; box-shadow: var(--shadow-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0;">
+                    <i class="fas fa-users-cog" style="color: var(--primary);"></i> Staff Directory
+                  </h3>
+                  <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0;">Role-based team members and delivery drivers</p>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem;">
+                  <select id="staffRoleFilter" onchange="filterStaffTable()" class="form-control" style="width: 160px; padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+                    <option value="all">All Staff Roles</option>
+                    <option value="admin">Administrators</option>
+                    <option value="delivery_agent">Delivery Agents</option>
+                  </select>
+                  <input type="text" id="staffSearchInput" oninput="filterStaffTable()" placeholder="Search staff..." class="form-control" style="width: 180px; padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Staff Member</th>
+                      <th>Role Assigned</th>
+                      <th>Contact Phone</th>
+                      <th>Location</th>
+                      <th>Deliveries</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="staffTbody">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading staff...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Order Detail & Status Modal -->
+  <div class="admin-modal" id="orderModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 style="font-weight: 800; margin: 0;" id="modalOrderTitle">Order Details</h4>
+        <button onclick="closeOrderModal()" style="background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">&times;</button>
+      </div>
+      <div class="modal-body" id="modalOrderBody">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="js/toast.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
