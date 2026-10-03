@@ -26,9 +26,22 @@ async function getProducts(req, res) {
     if (category && category !== 'all') {
       const catId = Number(category);
       if (!isNaN(catId)) {
-        products = products.filter(p => p.category_id === catId);
+        products = products.filter(p => Number(p.category_id) === catId);
       } else {
-        products = products.filter(p => p.category_slug === category || (p.category_name && p.category_name.toLowerCase() === category.toLowerCase()));
+        const target = category.toLowerCase().trim();
+        const normTarget = target.replace(/[^a-z0-9]/g, '');
+        products = products.filter(p => {
+          const slug = (p.category_slug || '').toLowerCase().trim();
+          const name = (p.category_name || '').toLowerCase().trim();
+          const normSlug = slug.replace(/[^a-z0-9]/g, '');
+          const normName = name.replace(/[^a-z0-9]/g, '');
+          return slug === target || 
+                 name === target || 
+                 normSlug === normTarget || 
+                 normName === normTarget ||
+                 normName.includes(normTarget) ||
+                 normSlug.includes(normTarget);
+        });
       }
     }
 

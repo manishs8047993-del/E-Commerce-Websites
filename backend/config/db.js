@@ -385,12 +385,21 @@ function handleMemoryQuery(sql, params) {
 
       let list = memoryStore.products.map(p => {
         const cat = memoryStore.categories.find(c => c.id === p.category_id);
-        return { ...p, category_name: cat ? cat.name : 'Uncategorized' };
+        return {
+          ...p,
+          category_name: cat ? cat.name : 'Uncategorized',
+          category_slug: cat ? cat.slug : ''
+        };
       });
 
       if (cleanSql.includes('where p.id =') || cleanSql.includes('where id =')) {
         const id = Number(params[0]);
         return list.filter(p => p.id === id);
+      }
+
+      if (cleanSql.includes('where p.category_id =') || cleanSql.includes('where category_id =')) {
+        const catId = Number(params[0]);
+        list = list.filter(p => Number(p.category_id) === catId);
       }
 
       if (cleanSql.includes('is_featured = 1') || cleanSql.includes('is_featured = true')) {

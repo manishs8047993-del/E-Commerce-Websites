@@ -19,14 +19,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProducts();
 });
 
+let cachedCategories = [];
+
 // Load Categories
 async function loadCategories() {
   try {
     const res = await API.get('/products/categories');
+    cachedCategories = res.categories || [];
     const bar = document.getElementById('categories-bar');
-    if (!bar || !res.categories) return;
+    if (!bar || !cachedCategories.length) return;
 
-    res.categories.forEach(cat => {
+    cachedCategories.forEach(cat => {
       const btn = document.createElement('button');
       btn.className = `cat-pill ${currentCategory === cat.slug ? 'active' : ''}`;
       btn.innerHTML = `<i class="${cat.icon || 'fas fa-box'}"></i> ${cat.name}`;
@@ -95,7 +98,9 @@ async function loadProducts() {
         titleEl.textContent = `Search Results for "${currentSearch}"`;
         subtitleEl.textContent = `Found ${products.length} matching products`;
       } else if (currentCategory !== 'all') {
-        titleEl.textContent = `${currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1)} Products`;
+        const found = cachedCategories.find(c => c.slug === currentCategory || String(c.id) === String(currentCategory));
+        const catName = found ? found.name : (currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1));
+        titleEl.textContent = `${catName} Collection`;
         subtitleEl.textContent = `Showing ${products.length} products in this category`;
       } else {
         titleEl.textContent = 'Featured Catalog';
