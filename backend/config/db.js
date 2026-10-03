@@ -66,9 +66,10 @@ async function initMySQL() {
     const dbHost = process.env.DB_HOST || 'localhost';
     const isLocalhost = dbHost === 'localhost' || dbHost === '127.0.0.1';
 
-    // If running on Vercel serverless without an external cloud MySQL host configured
+    // Only use in-memory if on Vercel AND no external cloud DB is configured
+    // If a real cloud DB host is set (Aiven, Railway, etc.), always try to connect
     if (isVercel && isLocalhost) {
-      console.log('⚡ [Vercel Cloud] Localhost MySQL is not available in serverless containers. Activating In-Memory Store with full catalog.');
+      console.log('⚡ [Vercel Cloud] No external DB configured. Add DB_HOST env var in Vercel dashboard to use a real database. Activating In-Memory Store (data will not persist between requests).');
       useFallback = true;
       await initMemoryStore();
       initComplete = true;
@@ -76,30 +77,35 @@ async function initMySQL() {
     }
 
     try {
-      // 1. Initial connection to create database if not exists
-      const tempConnection = await mysql.createConnection({
-        host: dbHost,
-        port: process.env.DB_PORT || 3306,
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
-        connectTimeout: 4000
-      });
-
       const dbName = process.env.DB_NAME || 'ecommerce_db';
-      await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-      await tempConnection.end();
+      const useSSL = !isLocalhost;
+
+      // 1. Initial connection to create database if not exists (skip for cloud DBs - they pre-create DBs)
+      if (isLocalhost) {
+        const tempConnection = await mysql.createConnection({
+          host: dbHost,
+          port: Number(process.env.DB_PORT) || 3306,
+          user: process.env.DB_USER || 'root',
+          password: process.env.DB_PASSWORD || '',
+          connectTimeout: 6000
+        });
+        await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+        await tempConnection.end();
+      }
 
       // 2. Main Pool Connection
+      // Use SSL for cloud databases (Aiven, Railway, PlanetScale, etc.)
       pool = mysql.createPool({
         host: dbHost,
-        port: process.env.DB_PORT || 3306,
+        port: Number(process.env.DB_PORT) || 3306,
         user: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD || '',
         database: dbName,
         waitForConnections: true,
-        connectionLimit: 10,
+        connectionLimit: 5,
         queueLimit: 0,
-        connectTimeout: 4000
+        connectTimeout: 10000,
+        ssl: useSSL ? { rejectUnauthorized: false } : undefined
       });
 
     // Check if products table exists and has category_id column
@@ -489,19 +495,17 @@ function handleMemoryQuery(sql, params) {
 
   // 2. INSERT queries
   if (cleanSql.startsWith('insert into users')) {
-    const hasAvatar = cleanSql.includes('avatar_url');
     const newUser = {
       id: memoryStore.nextIds.users++,
       name: params[0],
       email: params[1],
       password: params[2],
       role: params[3] || 'customer',
-      avatar_url: hasAvatar ? params[4] : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80',
-      phone: hasAvatar ? (params[5] || null) : (params[4] || null),
-      address: hasAvatar ? (params[6] || null) : (params[5] || null),
-      city: hasAvatar ? (params[7] || null) : (params[6] || null),
-      state: hasAvatar ? (params[8] || null) : (params[7] || null),
-      postal_code: hasAvatar ? (params[9] || null) : (params[8] || null),
+      phone: params[4] || null,
+      address: params[5] || null,
+      city: params[6] || null,
+      state: params[7] || null,
+      postal_code: params[8] || null,
       created_at: new Date()
     };
     memoryStore.users.push(newUser);

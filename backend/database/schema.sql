@@ -5,6 +5,7 @@ CREATE DATABASE IF NOT EXISTS `ecommerce_db` DEFAULT CHARACTER SET utf8mb4 COLLA
 USE `ecommerce_db`;
 
 -- Drop existing tables in reverse order of foreign keys
+DROP TABLE IF EXISTS `notifications`;
 DROP TABLE IF EXISTS `order_items`;
 DROP TABLE IF EXISTS `orders`;
 DROP TABLE IF EXISTS `cart_items`;
@@ -19,7 +20,8 @@ CREATE TABLE `users` (
   `name` VARCHAR(100) NOT NULL,
   `email` VARCHAR(120) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
-  `role` ENUM('customer', 'admin') DEFAULT 'customer',
+  `role` ENUM('customer', 'admin', 'delivery_agent', 'staff') DEFAULT 'customer',
+  `avatar_url` TEXT DEFAULT NULL,
   `phone` VARCHAR(20) DEFAULT NULL,
   `address` TEXT DEFAULT NULL,
   `city` VARCHAR(50) DEFAULT NULL,
@@ -123,4 +125,18 @@ CREATE TABLE `reviews` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 8. Notifications Table
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `message` TEXT NOT NULL,
+  `type` VARCHAR(50) DEFAULT 'info',
+  `is_read` BOOLEAN DEFAULT FALSE,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  INDEX (`user_id`),
+  INDEX (`is_read`)
 ) ENGINE=InnoDB;

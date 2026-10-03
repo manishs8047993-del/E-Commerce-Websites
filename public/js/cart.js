@@ -12,6 +12,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadCart() {
   const root = document.getElementById('cart-root');
+
+  // Show loading state
+  if (root) {
+    root.innerHTML = `
+      <div style="text-align: center; padding: 4rem 2rem;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+        <p style="color: var(--text-muted);">Loading your cart...</p>
+      </div>
+    `;
+  }
+
   try {
     const res = await API.get('/cart');
     const items = res.items || [];
@@ -145,7 +156,30 @@ async function loadCart() {
       </div>
     `;
   } catch (err) {
-    showEmptyOrUnauth(true);
+    console.error('Cart load error:', err);
+    // If token was wiped due to 401, show the login screen
+    if (!API.isLoggedIn()) {
+      showEmptyOrUnauth(false);
+      return;
+    }
+    // Otherwise show a proper error message, not a misleading empty cart
+    if (root) {
+      root.innerHTML = `
+        <div style="background: var(--bg-card); border-radius: var(--radius-xl); border: 1px solid var(--danger); padding: 3rem 2rem; text-align: center; max-width: 600px; margin: 2rem auto;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--danger); margin-bottom: 1.25rem;"></i>
+          <h2 style="margin-bottom: 0.75rem;">Couldn't Load Your Cart</h2>
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">${err.message || 'A server error occurred. Please try again.'}</p>
+          <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button onclick="loadCart()" class="btn btn-primary btn-lg">
+              <i class="fas fa-redo"></i> Retry
+            </button>
+            <a href="/index.html" class="btn btn-secondary btn-lg">
+              <i class="fas fa-arrow-left"></i> Browse Store
+            </a>
+          </div>
+        </div>
+      `;
+    }
   }
 }
 
